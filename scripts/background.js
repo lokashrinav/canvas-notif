@@ -7,7 +7,7 @@ async function fetchAssignments(token) {
       headers: { Authorization: `Bearer ${token}` }
     });
     const courses = await response.json();
-    alert('Fetched courses:', courses); // Log fetched courses
+    console.log('Fetched courses:', courses); // Log fetched courses
 
     let assignments = [];
     for (const course of courses) {
@@ -16,7 +16,7 @@ async function fetchAssignments(token) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const courseAssignments = await courseResponse.json();
-      alert(`Fetched assignments for course ${course.id}:`, courseAssignments); // Log fetched assignments for each course
+      console.log(`Fetched assignments for course ${course.id}:`, courseAssignments); // Log fetched assignments for each course
 
       if (Array.isArray(courseAssignments)) {
         assignments = [...assignments, ...courseAssignments];
@@ -48,20 +48,20 @@ function showNotification(assignment) {
 }
 
 async function checkAssignments() {
-  alert('Checking assignments...'); // Log when checking assignments
+  console.log('Checking assignments...'); // Log when checking assignments
   chrome.storage.sync.get('token', async ({ token }) => {
     if (!token) {
-      alert('No Canvas token found.');
+      console.log('No Canvas token found.');
       return;
     }
-    alert('Canvas token found:', token); // Log the token
+    console.log('Canvas token found:', token); // Log the token
     const assignments = await fetchAssignments(token);
     const now = new Date();
     assignments.forEach((assignment) => {
       const dueDate = new Date(assignment.due_at);
-      alert('Assignment due date:', dueDate); // Log the due date
+      console.log('Assignment due date:', dueDate); // Log the due date
       if (dueDate - now <= 365 * 24 * 60 * 60 * 1000) { // Check if due within the next year
-        alert('Showing notification for assignment:', assignment.name); // Log when showing notification
+        console.log('Showing notification for assignment:', assignment.name); // Log when showing notification
         showNotification(assignment);
       }
     });
