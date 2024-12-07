@@ -68,11 +68,12 @@ async function checkAssignments() {
   });
 }
 
-// Listen for changes to the token and check assignments immediately
 chrome.storage.onChanged.addListener((changes, area) => {
-  console.log('Token hacked successfully!');
+  console.log('Storage area changed:', area);
+  console.log('Changes detected:', changes);
+
   if (area === 'sync' && changes.token) {
-    console.log('Token changed, checking assignments...');
-    checkAssignments();
+    console.log('Token updated:', changes.token.newValue);
+    checkAssignments(); // Trigger the assignment check
   }
 });
