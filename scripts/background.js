@@ -4,15 +4,24 @@ async function fetchAssignments(token) {
       headers: { Authorization: `Bearer ${token}` }
     });
     const courses = await response.json();
+    console.log('Fetched courses:', courses); // Log fetched courses
+
     let assignments = [];
     for (const course of courses) {
-      const courseAssignments = await fetch(
+      const courseResponse = await fetch(
         `https://canvas.instructure.com/api/v1/courses/${course.id}/assignments`,
         { headers: { Authorization: `Bearer ${token}` } }
-      ).then((res) => res.json());
-      assignments = [...assignments, ...courseAssignments];
+      );
+      const courseAssignments = await courseResponse.json();
+      console.log(`Fetched assignments for course ${course.id}:`, courseAssignments); // Log fetched assignments for each course
+
+      if (Array.isArray(courseAssignments)) {
+        assignments = [...assignments, ...courseAssignments];
+      } else {
+        console.error(`Assignments for course ${course.id} are not an array:`, courseAssignments);
+      }
     }
-    console.log('Fetched assignments:', assignments); // Log fetched assignments
+    console.log('All fetched assignments:', assignments); // Log all fetched assignments
     return assignments;
   } catch (error) {
     console.error('Error fetching assignments:', error);
@@ -41,7 +50,7 @@ async function checkAssignments() {
     assignments.forEach((assignment) => {
       const dueDate = new Date(assignment.due_at);
       console.log('Assignment due date:', dueDate); // Log the due date
-      if (dueDate - now <= 24 * 60 * 60 * 1000) {
+      if (dueDate - now <= 7 * 24 * 60 * 60 * 1000) { // Check if due within the next week
         console.log('Showing notification for assignment:', assignment.name); // Log when showing notification
         showNotification(assignment);
       }
@@ -62,4 +71,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
     console.log('Token changed, checking assignments...');
     checkAssignments();
   }
+});
+
+// Set up an alarm to check assignments every hour
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create('checkAssignments', { periodInMinutes: 60 });
 });
