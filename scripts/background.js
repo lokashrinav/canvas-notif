@@ -35,7 +35,7 @@ async function fetchAssignments(token) {
 function showNotification(assignment) {
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'images/waving-hand.png', 
+    iconUrl: chrome.runtime.getURL('images/waving-hand.png'),
     title: 'Assignment Due Soon',
     message: `Your assignment "${assignment.name}" is due soon.`,
     priority: 2
