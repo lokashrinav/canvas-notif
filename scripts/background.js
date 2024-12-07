@@ -1,3 +1,6 @@
+
+console.log('Background script loaded'); // Initial log to confirm background script is running
+
 async function fetchAssignments(token) {
   try {
     const response = await fetch('https://canvas.instructure.com/api/v1/courses', {
