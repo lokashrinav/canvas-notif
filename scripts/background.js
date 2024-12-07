@@ -1,27 +1,86 @@
 console.log('Background script loaded');
 
-async function fetchAssignments(token) {
+async function fetchCourses(token) {
   try {
     const response = await fetch('https://canvas.instructure.com/api/v1/courses', {
       headers: { Authorization: `Bearer ${token}` },
     });
     const courses = await response.json();
-    let assignments = [];
-    for (const course of courses) {
-      const courseResponse = await fetch(
-        `https://canvas.instructure.com/api/v1/courses/${course.id}/assignments`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const courseAssignments = await courseResponse.json();
-      if (Array.isArray(courseAssignments)) {
-        assignments = [...assignments, ...courseAssignments];
-      }
-    }
-    return assignments;
+    console.log('Fetched courses:', courses);
+    return courses;
   } catch (error) {
-    console.error('Error fetching assignments:', error);
+    console.error('Error fetching courses:', error);
     return [];
   }
+}
+
+async function fetchAssignmentsForCourse(courseId, token) {
+  try {
+    const response = await fetch(`https://canvas.instructure.com/api/v1/courses/${courseId}/assignments`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const assignments = await response.json();
+    console.log(`Fetched assignments for course ${courseId}:`, assignments);
+    return assignments;
+  } catch (error) {
+    console.error(`Error fetching assignments for course ${courseId}:`, error);
+    return [];
+  }
+}
+
+async function fetchCoursePages(courseId, token) {
+  try {
+    const response = await fetch(`https://canvas.instructure.com/api/v1/courses/${courseId}/pages`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const pages = await response.json();
+    console.log(`Fetched pages for course ${courseId}:`, pages);
+    return pages;
+  } catch (error) {
+    console.error(`Error fetching pages for course ${courseId}:`, error);
+    return [];
+  }
+}
+
+async function fetchPageContent(url, token) {
+  try {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const html = await response.text();
+    console.log(`Fetched page content from ${url}`);
+    return html;
+  } catch (error) {
+    console.error(`Error fetching page content from ${url}:`, error);
+    return '';
+  }
+}
+
+function parseHTMLContent(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const textContent = doc.body.textContent || '';
+  console.log('Parsed HTML content:', textContent);
+  return textContent;
+}
+
+async function fetchAllAssignments(token) {
+  const courses = await fetchCourses(token);
+  let allAssignments = [];
+  for (const course of courses) {
+    const assignments = await fetchAssignmentsForCourse(course.id, token);
+    allAssignments = [...allAssignments, ...assignments];
+
+    const pages = await fetchCoursePages(course.id, token);
+    for (const page of pages) {
+      const pageContent = await fetchPageContent(page.html_url, token);
+      const textContent = parseHTMLContent(pageContent);
+      // Extract due dates and links from textContent
+      // Add logic to follow links and fetch content if necessary
+    }
+  }
+  console.log('All fetched assignments:', allAssignments);
+  return allAssignments;
 }
 
 function showWeeklyNotification(assignments) {
@@ -60,7 +119,7 @@ async function checkAssignments() {
       return;
     }
     console.log('Canvas token found:', token);
-    const assignments = await fetchAssignments(token);
+    const assignments = await fetchAllAssignments(token);
     const now = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(now.getDate() + 7);
@@ -100,5 +159,20 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.token) {
     console.log('Token changed, checking assignments...');
     checkAssignments();
+  }
+});
+
+// Handle messages from popup.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'fetchAssignments') {
+    chrome.storage.sync.get('token', async ({ token }) => {
+      if (!token) {
+        sendResponse({ assignments: [] });
+        return;
+      }
+      const assignments = await fetchAllAssignments(token);
+      sendResponse({ assignments });
+    });
+    return true; // Indicates async response
   }
 });
