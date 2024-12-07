@@ -29,25 +29,37 @@ function showNotification(assignment) {
   });
 }
 
-chrome.alarms.onAlarm.addListener(async (alarm) => {
+async function checkAssignments() {
+  chrome.storage.sync.get('token', async ({ token }) => {
+    if (!token) {
+      console.log('No Canvas token found.');
+      return;
+    }
+    console.log('Canvas token found:', token); // Log the token
+    const assignments = await fetchAssignments(token);
+    const now = new Date();
+    assignments.forEach((assignment) => {
+      const dueDate = new Date(assignment.due_at);
+      console.log('Assignment due date:', dueDate); // Log the due date
+      if (dueDate - now <= 24 * 60 * 60 * 1000) {
+        console.log('Showing notification for assignment:', assignment.name); // Log when showing notification
+        showNotification(assignment);
+      }
+    });
+  });
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
   console.log('Alarm triggered:', alarm.name); // Log when the alarm is triggered
   if (alarm.name === 'checkAssignments') {
-    chrome.storage.sync.get('token', async ({ token }) => {
-      if (!token) {
-        console.log('No Canvas token found.');
-        return;
-      }
-      console.log('Canvas token found:', token); // Log the token
-      const assignments = await fetchAssignments(token);
-      const now = new Date();
-      assignments.forEach((assignment) => {
-        const dueDate = new Date(assignment.due_at);
-        console.log('Assignment due date:', dueDate); // Log the due date
-        if (dueDate - now <= 24 * 60 * 60 * 1000) {
-          console.log('Showing notification for assignment:', assignment.name); // Log when showing notification
-          showNotification(assignment);
-        }
-      });
-    });
+    checkAssignments();
+  }
+});
+
+// Listen for changes to the token and check assignments immediately
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.token) {
+    console.log('Token changed, checking assignments...');
+    checkAssignments();
   }
 });
