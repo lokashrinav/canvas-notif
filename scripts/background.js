@@ -35,10 +35,17 @@ function showNotification(assignment) {
     title: 'Assignment Due Soon',
     message: `Your assignment "${assignment.name}" is due soon.`,
     priority: 2
+  }, (notificationId) => {
+    if (chrome.runtime.lastError) {
+      console.error('Notification error:', chrome.runtime.lastError);
+    } else {
+      console.log('Notification shown:', notificationId);
+    }
   });
 }
 
 async function checkAssignments() {
+  console.log('Checking assignments...'); // Log when checking assignments
   chrome.storage.sync.get('token', async ({ token }) => {
     if (!token) {
       console.log('No Canvas token found.');
@@ -58,13 +65,6 @@ async function checkAssignments() {
   });
 }
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  console.log('Alarm triggered:', alarm.name); // Log when the alarm is triggered
-  if (alarm.name === 'checkAssignments') {
-    checkAssignments();
-  }
-});
-
 // Listen for changes to the token and check assignments immediately
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.token) {
@@ -75,5 +75,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // Set up an alarm to check assignments every hour
 chrome.runtime.onInstalled.addListener(() => {
+  console.log('Extension installed, setting up alarm...');
   chrome.alarms.create('checkAssignments', { periodInMinutes: 60 });
+});
+
+// Log when the alarm is triggered
+chrome.alarms.onAlarm.addListener((alarm) => {
+  console.log('Alarm triggered:', alarm.name); // Log when the alarm is triggered
+  if (alarm.name === 'checkAssignments') {
+    checkAssignments();
+  }
 });
