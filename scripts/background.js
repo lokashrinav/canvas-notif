@@ -45,7 +45,7 @@ function showNotification(assignment) {
 }
 
 async function checkAssignments() {
-  console.log('Checking assignments...'); // Log when checking assignments
+  alert('Checking assignments...'); // Log when checking assignments
   chrome.storage.sync.get('token', async ({ token }) => {
     if (!token) {
       alert('No Canvas token found.');
