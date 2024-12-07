@@ -57,7 +57,7 @@ async function checkAssignments() {
     assignments.forEach((assignment) => {
       const dueDate = new Date(assignment.due_at);
       console.log('Assignment due date:', dueDate); // Log the due date
-      if (dueDate - now <= 7 * 24 * 60 * 60 * 1000) { // Check if due within the next week
+      if (dueDate - now <= 365 * 24 * 60 * 60 * 1000) { // Check if due within the next year
         console.log('Showing notification for assignment:', assignment.name); // Log when showing notification
         showNotification(assignment);
       }
