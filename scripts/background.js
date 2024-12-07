@@ -4,7 +4,7 @@ async function fetchAssignments(token) {
       headers: { Authorization: `Bearer ${token}` }
     });
     const courses = await response.json();
-    console.log('Fetched courses:', courses); // Log fetched courses
+    alert('Fetched courses:', courses); // Log fetched courses
 
     let assignments = [];
     for (const course of courses) {
@@ -13,7 +13,7 @@ async function fetchAssignments(token) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const courseAssignments = await courseResponse.json();
-      console.log(`Fetched assignments for course ${course.id}:`, courseAssignments); // Log fetched assignments for each course
+      alert(`Fetched assignments for course ${course.id}:`, courseAssignments); // Log fetched assignments for each course
 
       if (Array.isArray(courseAssignments)) {
         assignments = [...assignments, ...courseAssignments];
@@ -48,17 +48,17 @@ async function checkAssignments() {
   console.log('Checking assignments...'); // Log when checking assignments
   chrome.storage.sync.get('token', async ({ token }) => {
     if (!token) {
-      console.log('No Canvas token found.');
+      alert('No Canvas token found.');
       return;
     }
-    console.log('Canvas token found:', token); // Log the token
+    alert('Canvas token found:', token); // Log the token
     const assignments = await fetchAssignments(token);
     const now = new Date();
     assignments.forEach((assignment) => {
       const dueDate = new Date(assignment.due_at);
-      console.log('Assignment due date:', dueDate); // Log the due date
+      alert('Assignment due date:', dueDate); // Log the due date
       if (dueDate - now <= 365 * 24 * 60 * 60 * 1000) { // Check if due within the next year
-        console.log('Showing notification for assignment:', assignment.name); // Log when showing notification
+        alert('Showing notification for assignment:', assignment.name); // Log when showing notification
         showNotification(assignment);
       }
     });
@@ -69,20 +69,6 @@ async function checkAssignments() {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.token) {
     console.log('Token changed, checking assignments...');
-    checkAssignments();
-  }
-});
-
-// Set up an alarm to check assignments every hour
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Extension installed, setting up alarm...');
-  chrome.alarms.create('checkAssignments', { periodInMinutes: 60 });
-});
-
-// Log when the alarm is triggered
-chrome.alarms.onAlarm.addListener((alarm) => {
-  console.log('Alarm triggered:', alarm.name); // Log when the alarm is triggered
-  if (alarm.name === 'checkAssignments') {
     checkAssignments();
   }
 });
